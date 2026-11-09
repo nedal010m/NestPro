@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "NestProject": {
+      "title": "NestProject",
+      "description": "A saved CAD/CAM true-shape nesting workspace project owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who owns this project.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable project name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "sheetW": {
+          "type": "number",
+          "description": "Sheet width in millimeters."
+        },
+        "sheetH": {
+          "type": "number",
+          "description": "Sheet height in millimeters."
+        },
+        "partsCount": {
+          "type": "number",
+          "description": "Total requested parts count in this project."
+        },
+        "efficiency": {
+          "type": "number",
+          "description": "Computed sheet utilization percentage (0 to 100)."
+        },
+        "settings": {
+          "type": "object",
+          "description": "Nesting configuration map (sheetW, sheetH, margin, spacing, kerf, rotStep, etc.)."
+        },
+        "shapes": {
+          "type": "array",
+          "description": "Bounded list of shape objects (up to 100 unique part types)."
+        },
+        "placements": {
+          "type": "array",
+          "description": "Bounded list of computed part placements on the sheets (up to 500 placements)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "sheetW",
+        "sheetH",
+        "partsCount",
+        "efficiency",
+        "settings",
+        "shapes",
+        "placements",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SheetPreset": {
+      "title": "SheetPreset",
+      "description": "A custom saved raw material sheet dimension preset owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who owns this preset.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label for the sheet preset (e.g., 1300×100 مم).",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "widthMm": {
+          "type": "number",
+          "description": "Sheet width in millimeters."
+        },
+        "heightMm": {
+          "type": "number",
+          "description": "Sheet height in millimeters."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "label",
+        "widthMm",
+        "heightMm",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/NestProject"
+      },
+      "description": "Stores user-owned CAD/CAM nesting projects for cross-device cloud sync."
+    },
+    "/presets/{presetId}": {
+      "schema": {
+        "$ref": "#/entities/SheetPreset"
+      },
+      "description": "Stores user-owned custom sheet size presets."
+    }
+  }
+}

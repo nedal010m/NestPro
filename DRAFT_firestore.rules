@@ -1,0 +1,148 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Primitives
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Blueprint: NestProject
+    function isValidNestProject(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'sheetW', 'sheetH', 'partsCount',
+          'efficiency', 'settings', 'shapes', 'placements',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'sheetW', 'sheetH', 'partsCount',
+          'efficiency', 'settings', 'shapes', 'placements',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 120
+        && data.sheetW is number
+        && data.sheetW > 0
+        && data.sheetW <= 50000
+        && data.sheetH is number
+        && data.sheetH > 0
+        && data.sheetH <= 50000
+        && data.partsCount is number
+        && data.partsCount >= 0
+        && data.partsCount <= 100000
+        && data.efficiency is number
+        && data.efficiency >= 0
+        && data.efficiency <= 100
+        && data.settings is map
+        && data.settings.size() <= 30
+        && data.shapes is list
+        && data.shapes.size() <= 100
+        && (data.shapes.size() == 0 || data.shapes[0] is map)
+        && data.placements is list
+        && data.placements.size() <= 500
+        && (data.placements.size() == 0 || data.placements[0] is map)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Entity Blueprint: SheetPreset
+    function isValidSheetPreset(data) {
+      return data.keys().hasAll([
+          'ownerId', 'label', 'widthMm', 'heightMm', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'label', 'widthMm', 'heightMm', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.label is string
+        && data.label.size() >= 1
+        && data.label.size() <= 60
+        && data.widthMm is number
+        && data.widthMm > 0
+        && data.widthMm <= 50000
+        && data.heightMm is number
+        && data.heightMm > 0
+        && data.heightMm <= 50000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Collection: /projects/{projectId}
+    match /projects/{projectId} {
+      allow get: if isSignedIn() && isValidId(projectId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+
+      allow create: if isSignedIn()
+        && isValidId(projectId)
+        && isValidNestProject(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(projectId)
+        && isValidNestProject(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'sheetW', 'sheetH', 'partsCount',
+          'efficiency', 'settings', 'shapes', 'placements', 'updatedAt'
+        ]);
+
+      allow delete: if isSignedIn() && isValidId(projectId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection: /presets/{presetId}
+    match /presets/{presetId} {
+      allow get: if isSignedIn() && isValidId(presetId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+
+      allow create: if isSignedIn()
+        && isValidId(presetId)
+        && isValidSheetPreset(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(presetId)
+        && isValidSheetPreset(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'label', 'widthMm', 'heightMm', 'updatedAt'
+        ]);
+
+      allow delete: if isSignedIn() && isValidId(presetId) && existing().ownerId == request.auth.uid;
+    }
+  }
+}

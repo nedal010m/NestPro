@@ -1,0 +1,6 @@
+{
+  "name": "NestPro Studio — CorelDRAW & Illustrator True-Shape Nesting",
+  "description": "محرك تعشيق ذكي احترافي بدوران حر وتكامل مباشر مع CorelDRAW و Adobe Illustrator وتصدير DXF / SVG / PLT / VBS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
